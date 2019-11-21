@@ -1,0 +1,155 @@
+原创： Android  谷歌开发者  今天
+
+作者 / Chris Banes, Android 开发者关系团队工程师
+
+来源：谷歌开发者公众号
+
+#开启全面屏体验 | 手势导航 (一)
+
+本文是手势导航连载的第一篇文章，在接下来的时间里，我们将会为大家带来一系列手势导航的话题，敬请关注！
+
+我们在 Android 10 中添加了新的系统导航模式，用户可以通过手势交互执行后退、返回至主屏以及打开设备助手等操作。
+
+全屏01.gif
+https://mmbiz.qpic.cn/mmbiz_gif/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUN1uCGLoGLLvyEU2GMwofkFNnDKmB4kL1lUB2dC0y2MEAskvTHJheCg/640?wx_fmt=gif&tp=webp&wxfrom=5&wx_lazy=1
+
+△ Android 10 中新加入的手势交互
+
+通过使用手势交互来执行系统导航，应用可以使用到更多的屏幕空间。这有助于您为用户打造更加沉浸的体验。
+
+在大多数设备上，用户都能选择他们喜欢的导航模式。现有的三键导航模式 (包含后退、返回首页以及切换最近使用的应用) 会被保留。搭载 Android 10 及以上版本系统的所有设备都要求保留这一导航模式。
+
+您可以通过 Android 系统 UI 产品经理的文章《Android 10 手势导航背后的故事》了解手势导航的研究和决策过程。
+
+这篇文章是本次连载的第一篇。本系列文章会着重为开发者们介绍如何让应用支持手势导航，涵盖的主题如下:
+开启全面屏体验，让应用的内容铺满整个屏幕
+处理与系统 UI 的视觉冲突
+处理与系统手势之间的冲突
+各种全面屏体验场景，以及如何适配它们
+
+现在就让我们开启 "边到边" 的全面屏体验之旅。
+
+全面屏幕体验
+
+我使用 "边到边" (edge-to-edge) 一词来描述那种将内容铺满整个屏幕，以实现更沉浸视觉体验的应用。默认情况下，应用内容的绘制范围从顶部状态栏下方开始，延伸至底部导航栏上方。(状态栏和导航栏统称为系统栏)
+
+全屏02.gif
+https://mmbiz.qpic.cn/mmbiz_gif/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUz7HkULu2Ds3934Gwp5q4hT39V2zSeuLGhg20jWDmWJWLOWXhF24rBg/640?wx_fmt=gif&tp=webp&wxfrom=5&wx_lazy=1
+
+实现从边到边的全面屏体验后，系统栏会覆盖在应用内容前方。应用也得以通过更大幅面的内容为用户带来更具有冲击力的体验。
+
+具体来说，这意味着应用需要做两件事:
+
+在导航栏后面绘制内容
+想要支持手势导航，应用需要考虑的第一个因素是在导航栏后面绘制内容。由于导航栏自身的大小和突出程度已经相比以前缩小了，因此我们现在强烈建议，当应用在 Android 10 及以上设备中运行时，将内容拓展至导航栏后方，以提供更具吸引力的现代化 UX。
+
+在搭载 Android 9 及以下的设备上运行时，导航栏后绘制内容是可选的，方便应用根据情况酌情选择。做到这些事情所需的 API 也都向前兼容至 API 21 (或 AndroidX 的对应版本)，因此支持 Android 10 以下设备所需的额外工作量很小。使用 Android 10 以下设备的用户同样能获得更加沉浸的体验。我们将它设置为可选，仅仅是为了最大程度地减少开发者的工作量和测试量。
+
+在状态栏后面绘制内容
+
+接下来，我们来看看屏幕顶部的状态栏。只要您的内容和布局允许，我们建议尽量把内容也拓展到状态栏的后方。举个具体的例子，比如像下图那样把一张背景图铺在状态栏后面，具体的技术实现可以参考类似 AppBarLayout 等布局，并将其放在屏幕顶部。
+
+全屏03.gif
+https://mmbiz.qpic.cn/mmbiz_png/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUgiakF1pMaicwnCcBgmX6t59E4PYW31k842UTG1xjJvibgvvaLL4kicooNw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1
+
+但如果应用的 UI 包含一个列表，而且列表顶端还固定放着一个 Toolbar 的话，那把内容绘制在状态栏后面就可能不合适了。同样，有些时候把内容绘制在导航栏下面也不合适。再强调一次: 是否扩展应用内容的绘制区域完全取决于开发者，是可选的。
+
+如何实现
+
+想实现 "边到边" 全面屏体验分三步:
+
+1. 请求进行全屏布局
+第一步是让系统将我们应用布局扩展至系统栏后方。需要使用的 API 是视图上的 setSystemUiVisibility()，它接受一些值，这里我们主要关注这么几个值:
+view.systemUiVisibility = 
+    // Tells the system that the window wishes the content to
+    // be laid out at the most extreme scenario. See the docs for
+    // more information on the specifics
+    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+    // Tells the system that the window wishes the content to
+    // be laid out as if the navigation bar was hidden
+    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+
+setSystemUiVisibility() 文档
+https://developer.android.google.cn/reference/android/view/View.html#setSystemUiVisibility(int)
+
+设置完毕后可以看到应用的内容出现在导航栏的后面:
+
+全屏04.jpg
+https://mmbiz.qpic.cn/mmbiz_png/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUlrbRFcm2C8nyh9icaWahU7Le0HnoekcbwPHYLKnoOWaPc64BRrpcsPw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1
+
+2. 更改系统栏颜色
+我们的应用布局现在已经拓展至全屏范围，因此需要同步更改一下系统栏的颜色，以便看清其后面的应用内容。
+
+Android 10
+在 Android 10 上，我们只需要将系统栏颜色设为完全透明即可:
+<!-- values-v29/themes.xml -->
+<style name="Theme.MyApp">
+    <item name="android:navigationBarColor">
+        @android:color/transparent
+    </item>
+
+    <!-- Optional, if drawing behind the status bar too -->
+    <item name="android:statusBarColor">
+        @android:color/transparent
+    </item>
+</style>
+
+在 Android 10 上，系统会负责在所有导航模式下确保系统栏的内容可见 (包括时间、图标、拖拽条等)。这意味着这些事情不再需要我们操心。具体来说，系统会执行以下两项操作之一:
+
+1. 动态颜色适配
+系统栏里的内容会根据其后面的内容改变颜色。如果拖拽条位于浅色内容前方，它将变为深色，在深色内容前方时则变为浅色。
+
+全屏05.gif
+https://mmbiz.qpic.cn/mmbiz_gif/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUFZOibbndficcHibzI3SkVpmGAtMp3D4jibnVicRZa9oIGv8hm9Lb0bqOGFQ/640?wx_fmt=gif&tp=webp&wxfrom=5&wx_lazy=1
+
+△ Android 10 上的动态颜色适配
+
+2. 半透明遮盖
+另外，系统也可以在系统栏后面放置一层半透明遮盖。对此我们最想提醒您注意的是，仅当您的应用声明 targetSdkVersion 为 29 时，才会发生这种情况。如果您的应用针对的是 SDK 28 或更低版本，则系统不会显示遮盖，而是提供透明的导航栏。
+
+全屏06.jpg
+https://mmbiz.qpic.cn/mmbiz_png/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAU2M2CXrl1h7CFkohb8lDJDUQty8Xu5O9ypV7ibPBVm5Mp8PgSuh7ibjJg/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1
+
+△ 在 Android 10 上选择按键导航模式时，系统会在按钮后方提供半透明遮盖
+
+这两种操作都是为了确保用户始终可以看到系统栏的内容。系统选择采用哪种做法取决于多个因素。如果满足以下条件，系统将使用遮盖:
+启用了两键或三键导航模式。
+设备制造商在手势导航模式下禁用了动态颜色适配。制造商这么做的原因可能是设备的性能不足以支持动态色彩适配。
+
+全屏07.jpg
+https://mmbiz.qpic.cn/mmbiz_png/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAU4kN8wqriaFwlSRr6cv6jp243OT1lkQSAicXkqaXYQU2ibnp8pgmoMiakZw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1
+
+△ 使用手势导航模式时系统提供的半透明遮盖
+
+否则，系统将使用动态色彩适应。上文中列出的条件是目前系统用来判断的依据，在将来可能会更改。
+
+在 Android 10 上禁用系统栏视觉保护
+
+如果您不想让系统执行任何自动内容视觉保护，则可以通过在主题中将 android:enforceNavigationBarContrast 和/或 android:enforceStatusBarContrast 的值设置为 false。
+
+Android 9 及更早版本
+如果您决定在 Android 10 以下的设备上实现全面屏应用，则应将系统栏颜色设置为半透明，从而确保其内容可见。比如针对深色主题的系统栏，可以先试试使用 70％ 不透明度的黑色进行遮盖:
+<!-- values/themes.xml -->
+<style name="Theme.MyApp">
+    <item name="android:navigationBarColor">
+        #B3FFFFFF
+    </item>
+</style>
+
+<!-- values-night/themes.xml -->
+<style name="Theme.MyApp">
+    <item name="android:navigationBarColor">
+        #B3000000
+    </item>
+</style>
+
+您可能需要根据系统栏后面显示的内容来调整遮盖的不透明度。对于浅色主题，可以试试使用半透明浅色遮盖 (如 #B3FFFFFF)。
+
+全屏08.jpg
+https://mmbiz.qpic.cn/mmbiz_png/rFWVXwibLGtxaEO2wX347hQ9jMzRtDVAUfO5FKC0ASMYyWJLFpbzSnqHPkaJOhI8rShg2PLpDI41iahha5SvGuOA/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1
+
+3. 处理视觉冲突
+
+按照本文的说明将应用设置为全面屏后，您可能会发现应用里有一些视图/控件被系统栏遮住了。接下来我们就需要处理视觉冲突，请关注我们的微信公众账号，接下来将为您推送本系列更多的文章。
+
+本文鸣谢: Nick Butcher
