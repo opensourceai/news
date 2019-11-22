@@ -6,7 +6,7 @@
 
 # Machine Learning Blog & Software Development News
 
-![image](https://github.com/TinyHaHa/news/blob/master/img-storage/2019/11/22/01.png)
+![image](https://github.com/TinyHaHa/news/blob/master/2019/11/img/2019/11/01.png)
 
 Hu等人介绍的ALS算法是一种非常受欢迎的技术，用于推荐系统问题，尤其是当我们具有隐式数据集（例如点击次数，点赞次数等）时。
 它可以很好地处理大量数据，我们可以在各种机器学习框架中找到许多良好的实现。
@@ -16,10 +16,14 @@ Spark的实现要求Item和User ID的数字必须在整数范围内（整数类�
 我在阅读代码时注意到的一件事是，这些id列在fit / predict方法开始时被转换为Doubles，然后转换为Integers。 
 这似乎有点骇人听闻，而且我已经看到它给垃圾收集器带来了不必要的压力。 这是ALS代码上将id转换为double的行：
 
-![image](https://github.com/TinyHaHa/news/blob/master/img-storage/2019/11/22/02.png)
+
+![image](https://github.com/TinyHaHa/news/blob/master/2019/11/img/2019/11/02.png)
+
+![image](https://github.com/TinyHaHa/news/blob/master/2019/11/img/2019/11/03.png)
 
 要理解为什么这样做，需要阅读checkedCast（）：
-![image](https://github.com/TinyHaHa/news/blob/master/img-storage/2019/11/22/03.png)
+
+![image](https://github.com/TinyHaHa/news/blob/master/2019/11/img/2019/11/04.png)
 
 此UDF接收Double并检查其范围，然后将其强制转换为整数。 此UDF用于架构验证。 问题是我们可以不使用丑陋的双铸件来实现这一目标吗？ 我相信是的：
 
