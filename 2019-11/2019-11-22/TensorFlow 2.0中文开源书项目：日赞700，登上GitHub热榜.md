@@ -1,3 +1,4 @@
+原文：https://www.jiqizhixin.com/articles/2019-11-17-3
 # TensorFlow 2.0中文开源书项目：日赞700，登上GitHub热榜
   TensorFlow2.0 正式版已发布一段时间，但目前系统性的相关教程还不够多。这个登上 GitHub 趋势榜的项目今日已获得 
   700 多赞，内容简单易懂，适合初学者和迁移到 tf2.0 的开发者使用。
@@ -92,4 +93,3 @@ for epoch in range(100):
 
 项目地址：https://github.com/dragen1860/TensorFlow-2.x-Tutorials
 
-文章原地址：https://www.jiqizhixin.com/articles/2019-11-17-3
